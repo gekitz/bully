@@ -42,6 +42,9 @@
 	return [self.name hasPrefix:@"private-"];
 }
 
+- (BOOL)isPresence {
+	return [self.name hasPrefix:@"presence-"];
+}
 
 - (NSDictionary *)authenticationParameters {
 	return [[NSDictionary alloc] initWithObjectsAndKeys:
@@ -58,10 +61,17 @@
 - (void)subscribeWithAuthentication:(NSDictionary *)authentication {
 	NSDictionary *dictionary = nil;
 	if (authentication) {
-		dictionary = [[NSDictionary alloc] initWithObjectsAndKeys:
-					  self.name, @"channel",
-					  [authentication objectForKey:@"auth"], @"auth",
-					  nil];
+		
+		NSMutableDictionary *dict =  [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+									  self.name, @"channel",
+									  [authentication objectForKey:@"auth"], @"auth",
+									  nil];
+		
+		if ([self isPresence]) {
+			[dict setObject:[authentication objectForKey:@"channel_data"] forKey:@"channel_data"];
+		}
+		
+		dictionary = dict;
 	} else {
 		dictionary = [[NSDictionary alloc] initWithObjectsAndKeys:
 					  self.name, @"channel",
@@ -85,17 +95,17 @@
 
 
 - (void)_subscribe {
-	if ([self isPrivate]) {
+	if ([self isPrivate] || [self isPresence]) {
 		if (!self.client.socketID) {
 			return;
 		}
-
+		
 		if (self.authenticationBlock) {
 			self.authenticationBlock(self);
 		}
 		return;
 	}
-
+	
 	[self subscribeWithAuthentication:nil];
 }
 
